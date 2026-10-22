@@ -1,95 +1,100 @@
-# Test cases: `bundleSymbolicName` in thing types
+# Modbus split add-ons – manual test cases
 
-This document describes, step by step, the test cases for the new `bundleSymbolicName` property
-(commit `2f899656d`, bundle `org.openhab.core.thing`).
+Tests the split of the Modbus binding into a lean core (`modbus-core`) plus one add-on per device
+(`modbus-e3dc`, `modbus-studer`, …) and the unchanged aggregate add-on `modbus` ("Modbus Binding (All Devices)").
+Target: openHAB 5.3.0-SNAPSHOT (distro build 146).
 
-## Background
+## Prerequisites
 
-A `ThingType` now knows the symbolic name of the bundle that provides it.
-This allows a thing type to be related to an add-on. The value is passed along as follows:
+- Windows, Java 21 or newer (`java -version`), internet access (the snapshot distro is downloaded once to `%TEMP%`).
+- Everything is started by double-clicking the `.bat` files in this folder. All instances are created next to them
+  (`oh52`, `oh53-lean`, `oh53-core`, `oh53-legacy`). Only one openHAB instance may run at a time (port 8080).
+- Stop a running instance with Ctrl+C in its window before starting the next test.
+- UI: <http://localhost:8080>, log: `<instance>\userdata\logs\openhab.log`.
+- Karaf console (for bundle checks): `ssh -p 8101 openhab@localhost` (password `habopen`), then `bundle:list | grep -i modbus`.
 
-1. `ThingTypeXmlProvider` reads the value from the bundle (`bundle.getSymbolicName()`).
-1. `ThingTypeXmlResult` hands it to the `ThingTypeBuilder`.
-1. `ThingType` and `BridgeType` hold it and expose it via `getBundleSymbolicName()`.
-1. `StrippedThingTypeDTOMapper` sets it in the `StrippedThingTypeDTO` (REST).
-1. `AbstractStorageBasedTypeProvider` stores it in the `ThingTypeEntity` and restores it.
+## What is in this folder
 
-## Overview
+| Path | Purpose |
+|---|---|
+| `modbus-split-test\` | `Setup-OpenHabTest.ps1`, `modbus-features.xml` and a local Maven repo with the 13 Modbus bundles |
+| `core-patch\` | Patched `org.openhab.core.thing` jar (adds `bundleSymbolicName` to thing types) and the patch file |
+| `ui-patch\` | Patched Main UI jar (filters the "Add Thing" page per add-on) |
 
-| No. | Test class | Test method | Verifies |
-|-----|------------|-------------|----------|
-| 1 | `ThingTypeBuilderTest` | `bundleSymbolicNameIsKeptForThingTypeAndBridgeType` | Value is kept for thing type, bridge type and copy |
-| 2 | `ThingTypeBuilderTest` | `bundleSymbolicNameIsNullByDefault` | Value is `null` if not set |
-| 3 | `StrippedThingTypeDTOMapperTest` | `bundleSymbolicNameIsMapped` | Value ends up in the DTO |
-| 4 | `StrippedThingTypeDTOMapperTest` | `bundleSymbolicNameIsNullWithoutBundle` | DTO value is `null` without a bundle |
-| 5 | `AbstractStorageBasedTypeProviderTest` | `testMapToEntityIsComplete` (parameter `ThingType`) | Storage entity maps all fields of `ThingType` |
+---
 
-All test classes are located under `bundles/org.openhab.core.thing/src/test/java/org/openhab/core/thing/`.
+## Test B – Lean installation (single device add-on)
 
-## Test case 1: value is kept
+Goal: only the core and the E3DC extension are installed, nothing else.
 
-Class `type/ThingTypeBuilderTest`, method `bundleSymbolicNameIsKeptForThingTypeAndBridgeType`.
+1. Run `1-create-lean.bat` (creates `oh53-lean`, downloads the distro on first run).
+2. Run `2-start-lean.bat` and wait until the UI is reachable.
+3. Open *Settings → Add-on Store → Bindings*. Install **Modbus E3DC Binding**.
+4. Wait for the installation to finish.
 
-1. Configure the builder with `withBundleSymbolicName("org.openhab.binding.test")` and call `build()`.
-1. Expected: `thingType.getBundleSymbolicName()` returns `org.openhab.binding.test`.
-1. Call `buildBridge()` on the same builder.
-1. Expected: `bridgeType.getBundleSymbolicName()` also returns `org.openhab.binding.test`.
-1. Copy the finished thing type into a new builder (`ThingTypeBuilder.instance(thingType).build()`).
-1. Expected: the copy still returns `org.openhab.binding.test`.
+Expected:
+- Karaf: `bundle:list | grep -i modbus` shows exactly two bundles: `org.openhab.binding.modbus` and `org.openhab.binding.modbus.e3dc`
+  (plus the transport bundle).
+- **Modbus Core Binding** is also listed as installed in the add-on store.
+- *Settings → Things → + → Modbus E3DC Binding* lists the generic bridges (TCP/Serial) and the E3DC things.
+- Optional: create a *Modbus TCP Slave* bridge to your E3DC and an *E3DC* thing; it goes ONLINE.
 
-## Test case 2: default value is `null`
+## Test C – Patched core + UI (Add Thing filtering)
 
-Class `type/ThingTypeBuilderTest`, method `bundleSymbolicNameIsNullByDefault`.
+Goal: on the "Add Thing" page of one device add-on only its own thing types (plus generic Modbus things) are shown.
 
-1. Use the builder without calling `withBundleSymbolicName(...)` and call `build()`.
-1. Expected: `getBundleSymbolicName()` returns `null`.
+1. Continue with `oh53-lean` from Test B. In the add-on store additionally install **Modbus Studer Binding**.
+2. *Settings → Things → + → Modbus E3DC Binding* – **without the patch** the Studer thing types are listed as well. (Known limitation, this is the problem.)
+3. Stop openHAB (Ctrl+C).
+4. Run `3-apply-core-ui-patch.bat` (copies the patched jars, moves `userdata\cache` and `userdata\tmp` aside).
+5. Run `2-start-lean.bat` again (the first start takes longer).
+6. Hard-reload the browser (Ctrl+F5).
+7. *Settings → Things → + → Modbus E3DC Binding*.
 
-## Test case 3: mapping into the DTO
+Expected:
+- Generic Modbus things (bridges, Poller, Data) and E3DC things are shown. **No Studer things.**
+- *+ → Modbus Studer Binding* shows generic things and Studer things, no E3DC things.
+- *+ → Modbus Core Binding* (shown in "Choose Binding" because the device add-ons depend on the core feature) shows only generic things.
+- `http://localhost:8080/rest/thing-types?bindingId=modbus` returns entries with a `bundleSymbolicName` field.
+- No errors at startup in `openhab.log` (the core jar comes from a newer master than distro build 146 – note any exception).
 
-Class `dto/StrippedThingTypeDTOMapperTest`, method `bundleSymbolicNameIsMapped`.
+## Test D – Core binding only
 
-1. Build the thing type `binding:type` with label `Label` and bundle name `org.openhab.binding.test`.
-1. Call `StrippedThingTypeDTOMapper.map(thingType, Locale.ENGLISH)`.
-1. Expected: `dto.UID` is `binding:type`.
-1. Expected: `dto.bundleSymbolicName` is `org.openhab.binding.test`.
+Goal: the pure Modbus Core Binding can be installed without any device extension.
 
-## Test case 4: DTO without a bundle
+1. Stop other instances. Run `4-create-core-only.bat` (creates `oh53-core`).
+2. Run `5-start-core-only.bat`.
+3. Add-on store → install **Modbus Core Binding** only.
+4. *Settings → Things → + → Modbus Core Binding*.
 
-Class `dto/StrippedThingTypeDTOMapperTest`, method `bundleSymbolicNameIsNullWithoutBundle`.
+Expected:
+- `bundle:list | grep -i modbus` shows only `org.openhab.binding.modbus` (and transport).
+- The following thing types are offered: Modbus Serial Slave, Modbus TCP Slave, Modbus Poller, Modbus Data.
+- No device-specific types (E3DC, Studer, …).
+- Uninstall via the UI removes the bundles again.
 
-1. Build a thing type without a bundle name.
-1. Call `StrippedThingTypeDTOMapper.map(thingType, Locale.ENGLISH)`.
-1. Expected: `dto.bundleSymbolicName` is `null`.
+## Test A – Upgrade of an existing installation (no breaking change)
 
-## Test case 5: storage entity is complete
+Goal: an installation that has the old add-on `modbus` keeps working after the upgrade to 5.3.
 
-Class `binding/AbstractStorageBasedTypeProviderTest`, method `testMapToEntityIsComplete`.
+1. Run `0-create-oh52-baseline.bat` (creates a stock `oh52`; edit `VER` in the file if the download URL does not exist).
+2. Start `oh52\start.bat`, open the UI, set up the admin account.
+3. Install the add-on **Modbus Binding** (id `modbus`), create a *Modbus TCP Slave* bridge, a *Modbus Poller* and an *E3DC* thing
+   (or any other device thing you can reach). Check that it is ONLINE. Stop openHAB (Ctrl+C).
+4. Run `6-create-legacy-upgrade.bat` (copies `conf` and `userdata` of `oh52` into a new 5.3 instance `oh53-legacy`; `oh52` stays untouched).
+5. Run `7-start-legacy-upgrade.bat`.
 
-This test already existed. It failed after the commit because `ThingTypeEntity` lacked the new field.
+Expected:
+- The add-on **Modbus Binding (All Devices)** (id `modbus`) is shown as installed. Core and all device bundles are installed (`bundle:list | grep -i modbus`: 13 bundles).
+- All things are ONLINE, channels deliver values, no errors in the log.
+- *Add Thing → Modbus Binding (All Devices)* works and shows the thing types of all devices.
 
-1. Count all declared fields of `ThingType` and its superclasses (up to `Object`) via reflection.
-1. Count the fields of `AbstractStorageBasedTypeProvider.ThingTypeEntity`.
-1. Expected: entity fields = `ThingType` fields + 1. The additional field is `isBridge`.
-1. Before the fix: 14 instead of 15. After the fix: `bundleSymbolicName` is added to the entity,
-   and the value is transferred in `mapToEntity` and `mapFromEntity`.
+---
 
-## Running the tests
+## Reporting
 
-Only the affected test classes, from the repository root:
+For each test please note: PASS/FAIL, openHAB build, anything unexpected, and attach `openhab.log` on failure.
 
-```bash
-mvn test -pl bundles/org.openhab.core.thing -Dtest="ThingTypeBuilderTest,StrippedThingTypeDTOMapperTest,AbstractStorageBasedTypeProviderTest"
-```
+## Cleanup
 
-Full build without aborting on failing tests:
-
-```bash
-mvn clean install -Dmaven.test.failure.ignore=true
-```
-
-Results are written to `bundles/org.openhab.core.thing/target/surefire-reports`.
-
-## Known gap (not part of this commit)
-
-`semanticEquipmentTag` exists in `ThingTypeEntity` but is not set in `mapToEntity` or `mapFromEntity`.
-There is no test case for this yet. The field count in test case 5 does not detect it.
+Stop openHAB, then delete `oh52`, `oh53-lean`, `oh53-core`, `oh53-legacy`. The downloaded distro stays in `%TEMP%\openhab-5.3-snapshot.zip`.
