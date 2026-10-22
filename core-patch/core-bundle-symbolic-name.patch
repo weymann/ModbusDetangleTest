@@ -1,0 +1,272 @@
+diff --git a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/dto/StrippedThingTypeDTO.java b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/dto/StrippedThingTypeDTO.java
+index 20086b6..ca80155 100644
+--- a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/dto/StrippedThingTypeDTO.java
++++ b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/dto/StrippedThingTypeDTO.java
+@@ -43,6 +43,8 @@ public class StrippedThingTypeDTO {
+     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+     public boolean bridge;
+     public @Nullable String semanticEquipmentTag;
++    /** The symbolic name of the bundle that provides this thing type (can be used to relate it to an add-on). */
++    public @Nullable String bundleSymbolicName;
+ 
+     // do not remove - needed by GSON
+     public StrippedThingTypeDTO() {
+diff --git a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/dto/StrippedThingTypeDTOMapper.java b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/dto/StrippedThingTypeDTOMapper.java
+index 0ab2500..8d6c3ef 100644
+--- a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/dto/StrippedThingTypeDTOMapper.java
++++ b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/dto/StrippedThingTypeDTOMapper.java
+@@ -35,8 +35,11 @@ public class StrippedThingTypeDTOMapper {
+      * @return the stripped thing type DTO object
+      */
+     public static StrippedThingTypeDTO map(ThingType thingType, Locale locale) {
+-        return new StrippedThingTypeDTO(thingType.getUID().toString(), thingType.getLabel(), thingType.getDescription(),
+-                thingType.getCategory(), thingType.isListed(), thingType.getSupportedBridgeTypeUIDs(),
+-                thingType instanceof BridgeType, thingType.getSemanticEquipmentTag());
++        StrippedThingTypeDTO dto = new StrippedThingTypeDTO(thingType.getUID().toString(), thingType.getLabel(),
++                thingType.getDescription(), thingType.getCategory(), thingType.isListed(),
++                thingType.getSupportedBridgeTypeUIDs(), thingType instanceof BridgeType,
++                thingType.getSemanticEquipmentTag());
++        dto.bundleSymbolicName = thingType.getBundleSymbolicName();
++        return dto;
+     }
+ }
+diff --git a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/BridgeType.java b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/BridgeType.java
+index 85e2315..892378c 100644
+--- a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/BridgeType.java
++++ b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/BridgeType.java
+@@ -60,6 +60,7 @@ public class BridgeType extends ThingType {
+      * @param configDescriptionURI the link to the concrete ConfigDescription (could be null)
+      * @param extensibleChannelTypeIds the channel-type ids this thing-type is extensible with (could be null or empty).
+      * @param semanticEquipmentTag the semantic (equipment) tag of the bridge (could be null)
++     * @param bundleSymbolicName the symbolic name of the bundle that provides this bridge type (could be null)
+      * @throws IllegalArgumentException if the UID is null or empty, or the meta information is null
+      */
+     BridgeType(ThingTypeUID uid, @Nullable List<String> supportedBridgeTypeUIDs, String label,
+@@ -67,9 +68,10 @@ public class BridgeType extends ThingType {
+             @Nullable String representationProperty, @Nullable List<ChannelDefinition> channelDefinitions,
+             @Nullable List<ChannelGroupDefinition> channelGroupDefinitions, @Nullable Map<String, String> properties,
+             @Nullable URI configDescriptionURI, @Nullable List<String> extensibleChannelTypeIds,
+-            @Nullable String semanticEquipmentTag) throws IllegalArgumentException {
++            @Nullable String semanticEquipmentTag, @Nullable String bundleSymbolicName)
++            throws IllegalArgumentException {
+         super(uid, supportedBridgeTypeUIDs, label, description, category, listed, representationProperty,
+                 channelDefinitions, channelGroupDefinitions, properties, configDescriptionURI, extensibleChannelTypeIds,
+-                semanticEquipmentTag);
++                semanticEquipmentTag, bundleSymbolicName);
+     }
+ }
+diff --git a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/ThingType.java b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/ThingType.java
+index 348db80..90ca885 100644
+--- a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/ThingType.java
++++ b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/ThingType.java
+@@ -49,6 +49,7 @@ public class ThingType extends AbstractDescriptionType {
+     private final boolean listed;
+     private final @Nullable String category;
+     private final @Nullable String semanticEquipmentTag;
++    private final @Nullable String bundleSymbolicName;
+ 
+     /**
+      * Creates a new instance of this class with the specified parameters.
+@@ -71,6 +72,7 @@ public class ThingType extends AbstractDescriptionType {
+      * @param configDescriptionURI the link to the concrete ConfigDescription (could be null)
+      * @param extensibleChannelTypeIds the channel-type ids this thing-type is extensible with (could be null or empty).
+      * @param semanticEquipmentTag the semantic (equipment) tag of the thing (could be null)
++     * @param bundleSymbolicName the symbolic name of the bundle that provides this Thing type (could be null)
+      * @throws IllegalArgumentException if the UID is null or empty, or the meta information is null
+      */
+     ThingType(ThingTypeUID uid, @Nullable List<String> supportedBridgeTypeUIDs, String label,
+@@ -78,7 +80,8 @@ public class ThingType extends AbstractDescriptionType {
+             @Nullable String representationProperty, @Nullable List<ChannelDefinition> channelDefinitions,
+             @Nullable List<ChannelGroupDefinition> channelGroupDefinitions, @Nullable Map<String, String> properties,
+             @Nullable URI configDescriptionURI, @Nullable List<String> extensibleChannelTypeIds,
+-            @Nullable String semanticEquipmentTag) throws IllegalArgumentException {
++            @Nullable String semanticEquipmentTag, @Nullable String bundleSymbolicName)
++            throws IllegalArgumentException {
+         super(uid, label, description, configDescriptionURI);
+ 
+         this.category = category;
+@@ -94,6 +97,16 @@ public class ThingType extends AbstractDescriptionType {
+                 : Collections.unmodifiableList(extensibleChannelTypeIds);
+         this.properties = properties == null ? Map.of() : Collections.unmodifiableMap(properties);
+         this.semanticEquipmentTag = semanticEquipmentTag;
++        this.bundleSymbolicName = bundleSymbolicName;
++    }
++
++    /**
++     * Returns the symbolic name of the bundle that provides this {@link ThingType}.
++     *
++     * @return the symbolic name of the providing bundle (could be null)
++     */
++    public @Nullable String getBundleSymbolicName() {
++        return bundleSymbolicName;
+     }
+ 
+     /**
+diff --git a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/ThingTypeBuilder.java b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/ThingTypeBuilder.java
+index a26ab07..1cdebf7 100644
+--- a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/ThingTypeBuilder.java
++++ b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/type/ThingTypeBuilder.java
+@@ -45,6 +45,7 @@ public class ThingTypeBuilder {
+     private final String thingTypeId;
+     private String label;
+     private @Nullable String semanticEquipmentTag;
++    private @Nullable String bundleSymbolicName;
+ 
+     /**
+      * Create and return a {@link ThingTypeBuilder} with the given {@code bindingId}, {@code thingTypeId} and
+@@ -103,6 +104,7 @@ public class ThingTypeBuilder {
+         listed = thingType.isListed();
+         category = thingType.getCategory();
+         semanticEquipmentTag = thingType.getSemanticEquipmentTag();
++        bundleSymbolicName = thingType.getBundleSymbolicName();
+     }
+ 
+     /**
+@@ -124,7 +126,7 @@ public class ThingTypeBuilder {
+ 
+         return new ThingType(new ThingTypeUID(bindingId, thingTypeId), supportedBridgeTypeUIDs, label, description,
+                 category, listed, representationProperty, channelDefinitions, channelGroupDefinitions, properties,
+-                configDescriptionURI, extensibleChannelTypeIds, semanticEquipmentTag);
++                configDescriptionURI, extensibleChannelTypeIds, semanticEquipmentTag, bundleSymbolicName);
+     }
+ 
+     /**
+@@ -146,7 +148,12 @@ public class ThingTypeBuilder {
+ 
+         return new BridgeType(new ThingTypeUID(bindingId, thingTypeId), supportedBridgeTypeUIDs, label, description,
+                 category, listed, representationProperty, channelDefinitions, channelGroupDefinitions, properties,
+-                configDescriptionURI, extensibleChannelTypeIds, semanticEquipmentTag);
++                configDescriptionURI, extensibleChannelTypeIds, semanticEquipmentTag, bundleSymbolicName);
++    }
++
++    public ThingTypeBuilder withBundleSymbolicName(@Nullable String bundleSymbolicName) {
++        this.bundleSymbolicName = bundleSymbolicName;
++        return this;
+     }
+ 
+     public ThingTypeBuilder withLabel(String label) {
+diff --git a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/xml/internal/ThingTypeXmlProvider.java b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/xml/internal/ThingTypeXmlProvider.java
+index dc9d48e..552ccaf 100644
+--- a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/xml/internal/ThingTypeXmlProvider.java
++++ b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/xml/internal/ThingTypeXmlProvider.java
+@@ -131,6 +131,7 @@ public class ThingTypeXmlProvider implements XmlDocumentProvider<List<?>> {
+         // create thing and bridge types
+         for (ThingTypeXmlResult type : thingTypeRefs) {
+             try {
++                type.setBundleSymbolicName(bundle.getSymbolicName());
+                 thingTypeProvider.add(bundle, type.toThingType());
+             } catch (RuntimeException e) {
+                 logger.error("Could not register ThingType: {}", type.getUID(), e);
+diff --git a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/xml/internal/ThingTypeXmlResult.java b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/xml/internal/ThingTypeXmlResult.java
+index 5fe4d30..de138ab 100644
+--- a/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/xml/internal/ThingTypeXmlResult.java
++++ b/bundles/org.openhab.core.thing/src/main/java/org/openhab/core/thing/xml/internal/ThingTypeXmlResult.java
+@@ -64,6 +64,7 @@ public class ThingTypeXmlResult {
+     protected URI configDescriptionURI;
+     protected ConfigDescription configDescription;
+     protected @Nullable String semanticEquipmentTag;
++    private @Nullable String bundleSymbolicName;
+ 
+     public ThingTypeXmlResult(ThingTypeUID thingTypeUID, @Nullable List<String> supportedBridgeTypeUIDs, String label,
+             @Nullable String description, @Nullable String category, boolean listed,
+@@ -205,9 +206,18 @@ public class ThingTypeXmlResult {
+             builder.withSemanticEquipmentTag(semanticEquipmentTag);
+         }
+ 
++        builder.withBundleSymbolicName(bundleSymbolicName);
++
+         return builder;
+     }
+ 
++    /**
++     * Sets the symbolic name of the bundle that provides the described thing type.
++     */
++    public void setBundleSymbolicName(@Nullable String bundleSymbolicName) {
++        this.bundleSymbolicName = bundleSymbolicName;
++    }
++
+     public ThingType toThingType() throws ConversionException {
+         return getBuilder().build();
+     }
+diff --git a/bundles/org.openhab.core.thing/src/test/java/org/openhab/core/thing/dto/StrippedThingTypeDTOMapperTest.java b/bundles/org.openhab.core.thing/src/test/java/org/openhab/core/thing/dto/StrippedThingTypeDTOMapperTest.java
+new file mode 100644
+index 0000000..276473c
+--- /dev/null
++++ b/bundles/org.openhab.core.thing/src/test/java/org/openhab/core/thing/dto/StrippedThingTypeDTOMapperTest.java
+@@ -0,0 +1,47 @@
++/*
++ * Copyright (c) 2010-2026 Contributors to the openHAB project
++ *
++ * See the NOTICE file(s) distributed with this work for additional
++ * information.
++ *
++ * This program and the accompanying materials are made available under the
++ * terms of the Eclipse Public License 2.0 which is available at
++ * http://www.eclipse.org/legal/epl-2.0
++ *
++ * SPDX-License-Identifier: EPL-2.0
++ */
++package org.openhab.core.thing.dto;
++
++import static org.junit.jupiter.api.Assertions.*;
++
++import java.util.Locale;
++
++import org.eclipse.jdt.annotation.NonNullByDefault;
++import org.junit.jupiter.api.Test;
++import org.openhab.core.thing.type.ThingTypeBuilder;
++
++/**
++ * Tests the {@link StrippedThingTypeDTOMapper}.
++ *
++ * @author Spectre - Initial contribution
++ */
++@NonNullByDefault
++public class StrippedThingTypeDTOMapperTest {
++
++    @Test
++    public void bundleSymbolicNameIsMapped() {
++        StrippedThingTypeDTO dto = StrippedThingTypeDTOMapper.map(ThingTypeBuilder.instance("binding", "type", "Label")
++                .withBundleSymbolicName("org.openhab.binding.test").build(), Locale.ENGLISH);
++
++        assertEquals("binding:type", dto.UID);
++        assertEquals("org.openhab.binding.test", dto.bundleSymbolicName);
++    }
++
++    @Test
++    public void bundleSymbolicNameIsNullWithoutBundle() {
++        StrippedThingTypeDTO dto = StrippedThingTypeDTOMapper
++                .map(ThingTypeBuilder.instance("binding", "type", "Label").build(), Locale.ENGLISH);
++
++        assertNull(dto.bundleSymbolicName);
++    }
++}
+diff --git a/bundles/org.openhab.core.thing/src/test/java/org/openhab/core/thing/type/ThingTypeBuilderTest.java b/bundles/org.openhab.core.thing/src/test/java/org/openhab/core/thing/type/ThingTypeBuilderTest.java
+index 8b7611e..577f63f 100644
+--- a/bundles/org.openhab.core.thing/src/test/java/org/openhab/core/thing/type/ThingTypeBuilderTest.java
++++ b/bundles/org.openhab.core.thing/src/test/java/org/openhab/core/thing/type/ThingTypeBuilderTest.java
+@@ -210,6 +210,24 @@ public class ThingTypeBuilderTest {
+         assertThat(bridgeType.getLabel(), is(LABEL));
+     }
+ 
++    @Test
++    public void bundleSymbolicNameIsKeptForThingTypeAndBridgeType() {
++        ThingType thingType = builder.withBundleSymbolicName("org.openhab.binding.test").build();
++        assertThat(thingType.getBundleSymbolicName(), is("org.openhab.binding.test"));
++
++        BridgeType bridgeType = builder.buildBridge();
++        assertThat(bridgeType.getBundleSymbolicName(), is("org.openhab.binding.test"));
++
++        // copying a thing type keeps the bundle symbolic name
++        assertThat(ThingTypeBuilder.instance(thingType).build().getBundleSymbolicName(),
++                is("org.openhab.binding.test"));
++    }
++
++    @Test
++    public void bundleSymbolicNameIsNullByDefault() {
++        assertNull(builder.build().getBundleSymbolicName());
++    }
++
+     private Map<String, String> mockProperties() {
+         return Map.of("key1", "value1", "key2", "value2");
+     }

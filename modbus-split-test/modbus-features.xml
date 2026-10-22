@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+	Copyright (c) 2010-2026 Contributors to the openHAB project
+
+	See the NOTICE file(s) distributed with this work for additional
+	information.
+
+	This program and the accompanying materials are made available under the
+	terms of the Eclipse Public License 2.0 which is available at
+	http://www.eclipse.org/legal/epl-2.0
+
+	SPDX-License-Identifier: EPL-2.0
+
+-->
+<features name="org.openhab.addons.features.karaf.openhab-addons-5.3.0-SNAPSHOT" xmlns="http://karaf.apache.org/xmlns/features/v1.6.0">
+
+	<repository>mvn:org.openhab.core.features.karaf/org.openhab.core.features.karaf.openhab-core/5.3.0-SNAPSHOT/xml/features</repository>
+
+	<feature name="openhab-binding-modbus-ankersolix" description="Modbus Anker SOLIX Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.ankersolix/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-e3dc" description="Modbus E3DC Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.e3dc/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-foxinverter" description="Modbus Fox ESS Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.foxinverter/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-helioseasycontrols" description="Modbus Helios easyControls Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.helioseasycontrols/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-kermi" description="Modbus Kermi Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.kermi/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-lambda" description="Modbus Lambda Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.lambda/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus" description="Modbus Binding (All Devices)" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.ankersolix/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.e3dc/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.foxinverter/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.helioseasycontrols/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.kermi/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.lambda/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.sbc/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.stiebeleltron/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.studer/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.sungrow/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.sunspec/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="82">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.legacy/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-sbc" description="Modbus Saia Burgess Controls Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.sbc/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-stiebeleltron" description="Modbus Stiebel Eltron Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.stiebeleltron/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-studer" description="Modbus Studer Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.studer/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-sungrow" description="Modbus Sungrow Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.sungrow/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-sunspec" description="Modbus SunSpec Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-binding-modbus-core</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+		<bundle start-level="81">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus.sunspec/5.3.0-SNAPSHOT</bundle>
+	</feature>
+	<feature name="openhab-binding-modbus-core" description="Modbus Core Binding" version="5.3.0-SNAPSHOT">
+		<feature>openhab-runtime-base</feature>
+		<feature>openhab-transport-modbus</feature>
+		<bundle start-level="80">mvn:org.openhab.addons.bundles/org.openhab.binding.modbus/5.3.0-SNAPSHOT</bundle>
+	</feature>
+</features>
