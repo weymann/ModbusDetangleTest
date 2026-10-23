@@ -89,6 +89,19 @@ Expected:
 - All things are ONLINE, channels deliver values, no errors in the log.
 - *Add Thing → Modbus Binding (All Devices)* works and shows the thing types of all devices.
 
+## Test E – Aggregate and core installed together
+
+Goal: installing "Modbus Core Binding" while "Modbus Binding (All Devices)" is installed (or the other way round) causes no conflict.
+
+1. Use `oh53-lean` (or a fresh instance). In the add-on store install **Modbus Binding (All Devices)**, then additionally **Modbus Core Binding**.
+2. `bundle:list | grep -i modbus`.
+3. Uninstall **Modbus Core Binding** again (store) and repeat step 2 and look at the store.
+
+Expected:
+- Step 2: exactly 13 Modbus bundles (core, 11 devices, legacy), each once, no errors in `openhab.log`.
+- Step 3: the core bundle stays installed as long as the aggregate is installed (to be confirmed – not yet verified).
+- Cloud result (boot with both features): 13 bundles, 37 thing types, no errors.
+
 ---
 
 ## Reporting
